@@ -10,6 +10,7 @@ import type { Tool } from '@/types'
 const HexColorConverter = lazy(() => import('./HexColorConverter'))
 const UnityColorConverter = lazy(() => import('./UnityColorConverter'))
 const JsonFormatter = lazy(() => import('./JsonFormatter'))
+const GammaLinearConverter = lazy(() => import('./GammaLinearConverter'))
 
 export const TOOLS: Tool[] = [
   {
@@ -32,6 +33,13 @@ export const TOOLS: Tool[] = [
     description: 'Format, validate, and minify JSON',
     category: 'text',
     component: JsonFormatter,
+  },
+  {
+    id: 'gamma-linear',
+    label: 'Gamma ↔ Linear Opacity',
+    description: 'Convert opacity values between sRGB gamma and linear light space',
+    category: 'color',
+    component: GammaLinearConverter,
   },
 ]
 

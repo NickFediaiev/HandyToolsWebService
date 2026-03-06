@@ -1,7 +1,8 @@
 // Sidebar component — reads the tool registry and renders nav items
 // Props are typed interfaces — same mental model as method signatures in C#
 
-import { TOOLS, type Tool } from '@/tools'
+import { TOOLS } from '@/tools'
+import type { Tool } from '@/types'
 import { useToolStore } from '@/store/useToolStore'
 import { CATEGORY_LABELS, type ToolCategory } from '@/types'
 import clsx from 'clsx'

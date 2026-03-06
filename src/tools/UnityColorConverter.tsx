@@ -34,11 +34,6 @@ function hexToUnityColor(hex: string): UnityColor | null {
   }
 }
 
-function unityColorToHex(c: UnityColor): string {
-  const toHex = (v: number) => Math.round(v * 255).toString(16).padStart(2, '0')
-  return `#${toHex(c.r)}${toHex(c.g)}${toHex(c.b)}`
-}
-
 function unityColorToColor32(c: UnityColor): Color32 {
   return {
     r: Math.round(c.r * 255),

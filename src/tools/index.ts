@@ -11,6 +11,7 @@ const HexColorConverter = lazy(() => import('./HexColorConverter'))
 const UnityColorConverter = lazy(() => import('./UnityColorConverter'))
 const JsonFormatter = lazy(() => import('./JsonFormatter'))
 const GammaLinearConverter = lazy(() => import('./GammaLinearConverter'))
+const UnitySnippets = lazy(() => import('./UnitySnippets'))
 
 export const TOOLS: Tool[] = [
   {
@@ -40,6 +41,13 @@ export const TOOLS: Tool[] = [
     description: 'Convert opacity values between sRGB gamma and linear light space',
     category: 'color',
     component: GammaLinearConverter,
+  },
+  {
+    id: 'unity-snippets',
+    label: 'Unity Snippets',
+    description: 'Searchable C# snippets for common Unity patterns',
+    category: 'unity',
+    component: UnitySnippets,
   },
 ]
 

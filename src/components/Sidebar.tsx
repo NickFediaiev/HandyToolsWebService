@@ -77,10 +77,29 @@ export function Sidebar() {
 
       {/* Footer */}
       {!sidebarCollapsed && (
-        <div className="px-4 py-3 border-t border-bg-border">
+        <div className="px-4 py-3 border-t border-bg-border space-y-1">
           <p className="text-xs font-mono text-muted">
             {TOOLS.length} tool{TOOLS.length !== 1 ? 's' : ''}
           </p>
+          <p className="text-xs font-mono text-muted">Courtesy of Mykyta Fediaiev</p>
+          <div className="flex gap-2 text-xs font-mono">
+            <a
+              href="https://github.com/NickFediaiev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted hover:text-accent transition-colors"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://linkedin.com/in/nickfediaiev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted hover:text-accent transition-colors"
+            >
+              LinkedIn
+            </a>
+          </div>
         </div>
       )}
     </aside>

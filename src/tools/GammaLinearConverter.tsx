@@ -4,6 +4,8 @@
 
 import { useState, useCallback } from 'react'
 
+type Scale = '0-1' | '0-255' | '%'
+
 // sRGB transfer function: gamma-encoded → linear
 function gammaToLinear(g: number): number {
   if (g <= 0.04045) return g / 12.92
@@ -24,48 +26,89 @@ function fmt(v: number, decimals = 4): string {
   return v.toFixed(decimals)
 }
 
+// Parse raw string + scale → normalized 0-1 float (or NaN)
+function parseInput(raw: string, scale: Scale): number {
+  const n = Number(raw.replace('%', '').trim())
+  if (isNaN(n)) return NaN
+  if (scale === '0-255') return n / 255
+  if (scale === '%') return n / 100
+  return n
+}
+
+// Max value for a given scale (used for validation)
+const SCALE_MAX: Record<Scale, number> = { '0-1': 1, '0-255': 255, '%': 100 }
+const SCALE_PLACEHOLDER: Record<Scale, string> = { '0-1': '0.0 – 1.0', '0-255': '0 – 255', '%': '0 – 100' }
+
+// Convert a 0-1 float back to a display string for a given scale
+function float01ToString(v: number, scale: Scale): string {
+  if (scale === '0-255') return String(Math.round(v * 255))
+  if (scale === '%') return fmt(v * 100, 2)
+  return fmt(v, 4)
+}
+
+function validate(raw: string, scale: Scale): string | null {
+  const n = Number(raw.replace('%', '').trim())
+  const max = SCALE_MAX[scale]
+  if (raw.trim() === '' || isNaN(n) || n < 0 || n > max) {
+    return `Enter a value between 0 and ${max}`
+  }
+  return null
+}
+
 export default function GammaLinearConverter() {
-  // Gamma → Linear panel state (input as 0–255 byte)
-  const [gammaByte, setGammaByte] = useState('180')
-  const [gammaByteError, setGammaByteError] = useState<string | null>(null)
+  const [gammaRaw, setGammaRaw] = useState('180')
+  const [gammaScale, setGammaScale] = useState<Scale>('0-255')
+  const [gammaError, setGammaError] = useState<string | null>(null)
 
-  // Linear → Gamma panel state (input as 0–1 float)
-  const [linearFloat, setLinearFloat] = useState('0.4')
-  const [linearFloatError, setLinearFloatError] = useState<string | null>(null)
-
-  const handleGammaByteChange = useCallback((raw: string) => {
-    setGammaByte(raw)
-    const n = Number(raw)
-    if (raw.trim() === '' || isNaN(n) || n < 0 || n > 255) {
-      setGammaByteError('Enter a value between 0 and 255')
-    } else {
-      setGammaByteError(null)
-    }
-  }, [])
-
-  const handleLinearFloatChange = useCallback((raw: string) => {
-    setLinearFloat(raw)
-    const n = Number(raw)
-    if (raw.trim() === '' || isNaN(n) || n < 0 || n > 1) {
-      setLinearFloatError('Enter a value between 0 and 1')
-    } else {
-      setLinearFloatError(null)
-    }
-  }, [])
-
-  // Gamma → Linear derived values
-  const gammaByteNum = Number(gammaByte)
-  const gammaFloat01 = clamp01(gammaByteNum / 255)
-  const linearResult = gammaToLinear(gammaFloat01)
-
-  // Linear → Gamma derived values
-  const linearFloatNum = clamp01(Number(linearFloat))
-  const gammaResult = linearToGamma(linearFloatNum)
+  const [linearRaw, setLinearRaw] = useState('0.4')
+  const [linearScale, setLinearScale] = useState<Scale>('0-1')
+  const [linearError, setLinearError] = useState<string | null>(null)
 
   const copy = (text: string) => navigator.clipboard.writeText(text)
 
-  const gammaValid = !gammaByteError && gammaByte.trim() !== ''
-  const linearValid = !linearFloatError && linearFloat.trim() !== ''
+  const handleGammaInput = useCallback((raw: string) => {
+    setGammaRaw(raw)
+    setGammaError(validate(raw, gammaScale))
+  }, [gammaScale])
+
+  const handleGammaScale = useCallback((next: Scale) => {
+    const v01 = parseInput(gammaRaw, gammaScale)
+    if (!isNaN(v01)) {
+      const converted = float01ToString(clamp01(v01), next)
+      setGammaRaw(converted)
+      setGammaError(validate(converted, next))
+    } else {
+      setGammaError(validate(gammaRaw, next))
+    }
+    setGammaScale(next)
+  }, [gammaRaw, gammaScale])
+
+  const handleLinearInput = useCallback((raw: string) => {
+    setLinearRaw(raw)
+    setLinearError(validate(raw, linearScale))
+  }, [linearScale])
+
+  const handleLinearScale = useCallback((next: Scale) => {
+    const v01 = parseInput(linearRaw, linearScale)
+    if (!isNaN(v01)) {
+      const converted = float01ToString(clamp01(v01), next)
+      setLinearRaw(converted)
+      setLinearError(validate(converted, next))
+    } else {
+      setLinearError(validate(linearRaw, next))
+    }
+    setLinearScale(next)
+  }, [linearRaw, linearScale])
+
+  // Gamma → Linear
+  const gammaFloat01 = clamp01(parseInput(gammaRaw, gammaScale))
+  const linearResult = gammaToLinear(gammaFloat01)
+  const gammaValid = !gammaError && gammaRaw.trim() !== ''
+
+  // Linear → Gamma
+  const linearFloat01 = clamp01(parseInput(linearRaw, linearScale))
+  const gammaResult = linearToGamma(linearFloat01)
+  const linearValid = !linearError && linearRaw.trim() !== ''
 
   return (
     <div className="space-y-8">
@@ -75,22 +118,24 @@ export default function GammaLinearConverter() {
         <h2 className="text-sm font-semibold text-accent uppercase tracking-widest">Gamma → Linear</h2>
 
         <div className="tool-section">
-          <label className="tool-label">Gamma Opacity (0 – 255)</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="tool-label !mb-0">Gamma Opacity</label>
+            <ScalePicker value={gammaScale} onChange={handleGammaScale} />
+          </div>
           <input
             className="tool-input"
-            value={gammaByte}
-            onChange={(e) => handleGammaByteChange(e.target.value)}
-            placeholder="0 – 255"
+            value={gammaRaw}
+            onChange={(e) => handleGammaInput(e.target.value)}
+            placeholder={SCALE_PLACEHOLDER[gammaScale]}
             inputMode="decimal"
           />
-          {gammaByteError && <p className="text-red-400 text-xs font-mono mt-1">{gammaByteError}</p>}
+          {gammaError && <p className="text-red-400 text-xs font-mono mt-1">{gammaError}</p>}
         </div>
 
         {gammaValid && (
           <>
             <OpacityBar value={gammaFloat01} label="Gamma" />
             <OpacityBar value={linearResult} label="Linear" />
-
             <div className="grid grid-cols-2 gap-3">
               <CopyField label="Linear (float 0–1)" value={fmt(linearResult)} onCopy={copy} />
               <CopyField label="Linear (byte 0–255)" value={String(Math.round(linearResult * 255))} onCopy={copy} />
@@ -108,27 +153,29 @@ export default function GammaLinearConverter() {
         <h2 className="text-sm font-semibold text-accent uppercase tracking-widest">Linear → Gamma</h2>
 
         <div className="tool-section">
-          <label className="tool-label">Linear Opacity (0 – 1)</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="tool-label !mb-0">Linear Opacity</label>
+            <ScalePicker value={linearScale} onChange={handleLinearScale} />
+          </div>
           <input
             className="tool-input"
-            value={linearFloat}
-            onChange={(e) => handleLinearFloatChange(e.target.value)}
-            placeholder="0.0 – 1.0"
+            value={linearRaw}
+            onChange={(e) => handleLinearInput(e.target.value)}
+            placeholder={SCALE_PLACEHOLDER[linearScale]}
             inputMode="decimal"
           />
-          {linearFloatError && <p className="text-red-400 text-xs font-mono mt-1">{linearFloatError}</p>}
+          {linearError && <p className="text-red-400 text-xs font-mono mt-1">{linearError}</p>}
         </div>
 
         {linearValid && (
           <>
-            <OpacityBar value={linearFloatNum} label="Linear" />
+            <OpacityBar value={linearFloat01} label="Linear" />
             <OpacityBar value={gammaResult} label="Gamma" />
-
             <div className="grid grid-cols-2 gap-3">
               <CopyField label="Gamma (float 0–1)" value={fmt(gammaResult)} onCopy={copy} />
               <CopyField label="Gamma (byte 0–255)" value={String(Math.round(gammaResult * 255))} onCopy={copy} />
               <CopyField label="Gamma (%)" value={fmt(gammaResult * 100, 2) + '%'} onCopy={copy} />
-              <CopyField label="Linear (float 0–1)" value={fmt(linearFloatNum)} onCopy={copy} />
+              <CopyField label="Linear (float 0–1)" value={fmt(linearFloat01)} onCopy={copy} />
             </div>
           </>
         )}
@@ -137,7 +184,28 @@ export default function GammaLinearConverter() {
   )
 }
 
-// Visual opacity bar showing the value as a filled strip
+const SCALES: Scale[] = ['0-1', '0-255', '%']
+
+function ScalePicker({ value, onChange }: { value: Scale; onChange: (s: Scale) => void }) {
+  return (
+    <div className="flex gap-1">
+      {SCALES.map((s) => (
+        <button
+          key={s}
+          onClick={() => onChange(s)}
+          className={`px-2 py-0.5 rounded text-xs font-mono border transition-colors ${
+            s === value
+              ? 'bg-accent text-bg-base border-accent'
+              : 'border-bg-border text-muted hover:text-fg hover:border-fg'
+          }`}
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function OpacityBar({ value, label }: { value: number; label: string }) {
   return (
     <div className="tool-section">

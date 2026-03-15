@@ -7,7 +7,7 @@ export interface Tool {
   component: React.ComponentType
 }
 
-export type ToolCategory = 'color' | 'text' | 'unity' | 'math' | 'misc'
+export type ToolCategory = 'color' | 'text' | 'unity' | 'math' | 'misc' | 'pico8' | 'mermaid'
 
 export const CATEGORY_LABELS: Record<ToolCategory, string> = {
   color: 'Color',
@@ -15,4 +15,6 @@ export const CATEGORY_LABELS: Record<ToolCategory, string> = {
   unity: 'Unity',
   math: 'Math',
   misc: 'Misc',
+  pico8: 'PICO-8',
+  mermaid: 'Mermaid',
 }

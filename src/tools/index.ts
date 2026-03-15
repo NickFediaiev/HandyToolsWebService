@@ -12,6 +12,8 @@ const UnityColorConverter = lazy(() => import('./UnityColorConverter'))
 const JsonFormatter = lazy(() => import('./JsonFormatter'))
 const GammaLinearConverter = lazy(() => import('./GammaLinearConverter'))
 const UnitySnippets = lazy(() => import('./UnitySnippets'))
+const Pico8Snippets = lazy(() => import('./Pico8Snippets'))
+const MermaidSnippets = lazy(() => import('./MermaidSnippets'))
 
 export const TOOLS: Tool[] = [
   {
@@ -48,6 +50,20 @@ export const TOOLS: Tool[] = [
     description: 'Searchable C# snippets for common Unity patterns',
     category: 'unity',
     component: UnitySnippets,
+  },
+  {
+    id: 'pico8-reference',
+    label: 'PICO-8 Reference',
+    description: 'Searchable function reference for the PICO-8 Lua API',
+    category: 'pico8',
+    component: Pico8Snippets,
+  },
+  {
+    id: 'mermaid-snippets',
+    label: 'Mermaid Diagrams',
+    description: 'Copyable Mermaid diagram templates — flowcharts, sequences, ER and more',
+    category: 'mermaid',
+    component: MermaidSnippets,
   },
 ]
 

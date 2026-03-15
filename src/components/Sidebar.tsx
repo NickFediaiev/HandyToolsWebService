@@ -113,6 +113,8 @@ function getCategoryIcon(category: ToolCategory): string {
     unity: '◆',
     math: '∑',
     misc: '·',
+    pico8: '◉',
+    mermaid: '◇',
   }
   return icons[category]
 }

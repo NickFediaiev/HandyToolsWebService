@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PICO-8 Cheat Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Press+Start+2P&display=swap');
+
+  :root {
+    --bg:       #1d1227;
+    --panel:    #2a1a3a;
+    --border:   #5f2f6f;
+    --accent:   #ff77a8;
+    --accent2:  #29adff;
+    --accent3:  #00e436;
+    --accent4:  #ffa300;
+    --text:     #e0d0f0;
+    --muted:    #8b6b9b;
+    --code-bg:  #120d1a;
+    --tag-fn:   #ff77a8;
+    --tag-kw:   #29adff;
+    --tag-num:  #00e436;
+    --tag-str:  #ffa300;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,.08) 2px,
+      rgba(0,0,0,.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  header {
+    background: linear-gradient(135deg, #2a0a3a 0%, #1a1530 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 24px 32px 20px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(255,119,168,.15);
+  }
+
+  .logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+    color: var(--accent);
+    text-shadow: 0 0 16px rgba(255,119,168,.6), 3px 3px 0 #7a0040;
+    line-height: 1.4;
+  }
+
+  .logo span { color: var(--accent2); }
+
+  .search-wrap {
+    flex: 1;
+    max-width: 360px;
+  }
+
+  #search {
+    width: 100%;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  #search:focus { border-color: var(--accent); }
+  #search::placeholder { color: var(--muted); }
+
+  nav {
+    display: flex;
+    gap: 4px;
+    padding: 12px 32px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+
+  .tab:hover { color: var(--text); border-color: var(--accent); }
+  .tab.active { background: var(--accent); color: #1d1227; border-color: var(--accent); }
+
+  main {
+    padding: 24px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .section { display: none; }
+  .section.visible { display: block; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    margin-top: 4px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+
+  .card:hover { border-color: var(--accent); }
+
+  .card-head {
+    background: var(--code-bg);
+    padding: 8px 14px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--accent4);
+    letter-spacing: .05em;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-head .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent4);
+    display: inline-block;
+  }
+
+  .card-body { padding: 12px 14px; }
+
+  .fn-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .fn-item { }
+
+  .fn-sig {
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+
+  .fn { color: var(--tag-fn); font-weight: bold; }
+  .kw { color: var(--tag-kw); }
+  .num { color: var(--tag-num); }
+  .str { color: var(--tag-str); }
+  .param { color: #c0a0e0; font-style: italic; }
+  .comment { color: var(--muted); font-style: italic; }
+  .op { color: #ffec27; }
+
+  .fn-desc {
+    color: var(--muted);
+    font-size: 11.5px;
+    padding-left: 2px;
+  }
+
+  .fn-desc em { color: var(--accent4); font-style: normal; }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+    opacity: .4;
+  }
+
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+  }
+
+  .color-swatch {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: #fff;
+    text-shadow: 1px 1px 0 #000;
+    cursor: default;
+    border: 1px solid rgba(255,255,255,.1);
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .color-swatch .cidx { font-size: 5px; opacity: .8; }
+
+  .key-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .key-table td { padding: 5px 8px; border-bottom: 1px solid rgba(95,47,111,.3); }
+  .key-table tr:last-child td { border-bottom: none; }
+  .key-table td:first-child { color: var(--accent2); white-space: nowrap; width: 40%; }
+
+  .badge {
+    display: inline-block;
+    background: rgba(255,119,168,.15);
+    border: 1px solid rgba(255,119,168,.3);
+    color: var(--accent);
+    border-radius: 3px;
+    font-size: 10px;
+    padding: 1px 6px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  .no-results {
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+  }
+
+  .section-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--accent2);
+    margin-bottom: 14px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  .tip-box {
+    background: rgba(41,173,255,.08);
+    border: 1px solid rgba(41,173,255,.25);
+    border-radius: 5px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--accent2);
+    margin-top: 12px;
+  }
+
+  .tip-box strong { color: var(--accent4); }
+
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 11px;
+    color: var(--accent3);
+  }
+
+  .search-all .grid { margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PICO<span>-8</span><br>CHEAT</div>
+  <div class="search-wrap">
+    <input id="search" type="text" placeholder="search functions..." autocomplete="off" spellcheck="false">
+  </div>
+</header>
+
+<nav id="tabs">
+  <button class="tab active" data-tab="graphics">🎨 Graphics</button>
+  <button class="tab" data-tab="input">🕹️ Input</button>
+  <button class="tab" data-tab="audio">🔊 Audio</button>
+  <button class="tab" data-tab="math">📐 Math</button>
+  <button class="tab" data-tab="table">📦 Table</button>
+  <button class="tab" data-tab="string">🔤 String</button>
+  <button class="tab" data-tab="system">⚙️ System</button>
+  <button class="tab" data-tab="map">🗺️ Map</button>
+  <button class="tab" data-tab="memory">💾 Memory</button>
+  <button class="tab" data-tab="palette">🎨 Palette</button>
+  <button class="tab" data-tab="structure">🏗️ Structure</button>
+</nav>
+
+<main>
+
+<!-- GRAPHICS -->
+<div class="section visible" id="tab-graphics">
+  <p class="section-title">Graphics — Screen is 128×128, origin top-left</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>DRAW PRIMITIVES</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">pset</span>(<span class="param">x,y,c</span>)</div>
+          <div class="fn-desc">Set pixel at x,y to color c</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">pget</span>(<span class="param">x,y</span>)</div>
+          <div class="fn-desc">Get color of pixel at x,y</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">line</span>(<span class="param">x0,y0,x1,y1,c</span>)</div>
+          <div class="fn-desc">Draw line. Omit c → use draw color</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">rect</span>(<span class="param">x0,y0,x1,y1,c</span>)</div>
+          <div class="fn-desc">Draw unfilled rect</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">rectfill</span>(<span class="param">x0,y0,x1,y1,c</span>)</div>
+          <div class="fn-desc">Draw filled rect</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">circ</span>(<span class="param">x,y,r,c</span>)</div>
+          <div class="fn-desc">Draw unfilled circle</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">circfill</span>(<span class="param">x,y,r,c</span>)</div>
+          <div class="fn-desc">Draw filled circle</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">oval</span>(<span class="param">x0,y0,x1,y1,c</span>)</div>
+          <div class="fn-desc">Unfilled oval (0.2.0+)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">ovalfill</span>(<span class="param">x0,y0,x1,y1,c</span>)</div>
+          <div class="fn-desc">Filled oval (0.2.0+)</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>SPRITE & MAP DRAW</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">spr</span>(<span class="param">n,x,y,[w,h,fx,fy]</span>)</div>
+          <div class="fn-desc">Draw sprite n at x,y. w/h in sprites (default 1). fx/fy=flip</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">sspr</span>(<span class="param">sx,sy,sw,sh,dx,dy,[dw,dh,fx,fy]</span>)</div>
+          <div class="fn-desc">Stretch sprite from spritesheet region to screen rect</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">map</span>(<span class="param">cx,cy,sx,sy,cw,ch,[layer]</span>)</div>
+          <div class="fn-desc">Draw map cells cx,cy (cell coords) to screen sx,sy. layer=flag bitmask filter</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>TEXT & COLOR</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">print</span>(<span class="param">str,[x,y,c]</span>)</div>
+          <div class="fn-desc">Print string. Without x,y uses cursor + newlines. Returns x after string</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">color</span>(<span class="param">c</span>)</div>
+          <div class="fn-desc">Set global draw color (0-15)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">cursor</span>(<span class="param">x,y,[c]</span>)</div>
+          <div class="fn-desc">Set print cursor position and optional color</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">cls</span>(<span class="param">[c]</span>)</div>
+          <div class="fn-desc">Clear screen to color c (default 0/black)</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>CAMERA & CLIP</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">camera</span>(<span class="param">[x,y]</span>)</div>
+          <div class="fn-desc">Shift world draw by -x,-y. No args → reset</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">clip</span>(<span class="param">[x,y,w,h]</span>)</div>
+          <div class="fn-desc">Set draw clipping rect. No args → reset to full screen</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">fillp</span>(<span class="param">[pat]</span>)</div>
+          <div class="fn-desc">Set fill pattern (16-bit). Use <em>0b</em> prefix for binary literals</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>PALETTE TRICKS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">pal</span>(<span class="param">c0,c1,[p]</span>)</div>
+          <div class="fn-desc">Remap color c0 → c1. p=0 draw palette, p=1 screen palette</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">pal</span>()</div>
+          <div class="fn-desc">Reset all palette remaps</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">palt</span>(<span class="param">c,t</span>)</div>
+          <div class="fn-desc">Set color c transparent (t=true/false). Default: color 0 is transparent</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">palt</span>()</div>
+          <div class="fn-desc">Reset transparency (only 0 is transparent)</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>PRINT SPECIAL CHARS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="str">"\n"</span></div>
+          <div class="fn-desc">Newline in print string</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="str">"\#7"</span> or <span class="str">"\*"</span></div>
+          <div class="fn-desc">Inline color change in string (char code 7 + color 0-15)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">print</span>(<span class="str">"hello"</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">7</span>)</div>
+          <div class="fn-desc">White text at 0,0</div>
+        </div>
+        <div class="tip-box"><strong>TIP:</strong> Each char is 4×6px. Screen fits 32 cols × 21 rows of text.</div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- INPUT -->
+<div class="section" id="tab-input">
+  <p class="section-title">Input — Player 0 & 1</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>BUTTON FUNCTIONS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">btn</span>(<span class="param">b,[p]</span>)</div>
+          <div class="fn-desc">Returns true while button b held. p=player (0 or 1)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">btnp</span>(<span class="param">b,[p]</span>)</div>
+          <div class="fn-desc">Returns true on first press (+ repeat after delay). Good for menus</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>BUTTON INDICES</div>
+      <div class="card-body">
+        <table class="key-table">
+          <tr><td>0 — ⬅ LEFT</td><td>Arrow Left / S</td></tr>
+          <tr><td>1 — ➡ RIGHT</td><td>Arrow Right / F</td></tr>
+          <tr><td>2 — ⬆ UP</td><td>Arrow Up / E</td></tr>
+          <tr><td>3 — ⬇ DOWN</td><td>Arrow Down / D</td></tr>
+          <tr><td>4 — ❎ O / Z</td><td>Z / C / N</td></tr>
+          <tr><td>5 — 🅾 X / C</td><td>X / V / M</td></tr>
+        </table>
+        <div class="tip-box"><strong>TIP:</strong> Use constants <code>⬅ ➡ ⬆ ⬇ ❎ 🅾</code> in the editor instead of numbers.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>MOUSE & KEYBOARD</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">stat</span>(<span class="num">32</span>)</div>
+          <div class="fn-desc">Mouse X (requires <code>poke(0x5f2d,1)</code> to enable mouse)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">stat</span>(<span class="num">33</span>)</div>
+          <div class="fn-desc">Mouse Y</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">stat</span>(<span class="num">34</span>)</div>
+          <div class="fn-desc">Mouse buttons bitmask (bit 0=left, 1=right, 2=middle)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">stat</span>(<span class="num">31</span>)</div>
+          <div class="fn-desc">Last key pressed as string</div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- AUDIO -->
+<div class="section" id="tab-audio">
+  <p class="section-title">Audio — SFX (0-63) & Music (0-63)</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>SOUND EFFECTS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">sfx</span>(<span class="param">n,[ch,off,len]</span>)</div>
+          <div class="fn-desc">Play sfx n (0-63). ch=-1 auto, off=note offset, len=note count. <em>sfx(-1)</em> stops all</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">sfx</span>(<span class="num">-1</span>)</div>
+          <div class="fn-desc">Stop all SFX</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">sfx</span>(<span class="num">-2</span>)</div>
+          <div class="fn-desc">Stop looping SFX on all channels</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>MUSIC</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">music</span>(<span class="param">n,[fade,mask]</span>)</div>
+          <div class="fn-desc">Play music pattern n. fade=fadeout ms. mask=channel bitmask (1-15)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">music</span>(<span class="num">-1</span>)</div>
+          <div class="fn-desc">Stop music</div>
+        </div>
+        <div class="tip-box"><strong>TIP:</strong> Channels 0-3. Channel can be reserved for SFX by excluding it from mask.</div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MATH -->
+<div class="section" id="tab-math">
+  <p class="section-title">Math — All numbers are 16.16 fixed-point</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>BASIC MATH</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item"><div class="fn-sig"><span class="fn">abs</span>(<span class="param">x</span>)</div><div class="fn-desc">Absolute value</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">ceil</span>(<span class="param">x</span>)</div><div class="fn-desc">Round up</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">flr</span>(<span class="param">x</span>)</div><div class="fn-desc">Floor (round down)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">max</span>(<span class="param">x,y</span>)</div><div class="fn-desc">Larger of two values</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">min</span>(<span class="param">x,y</span>)</div><div class="fn-desc">Smaller of two values</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">mid</span>(<span class="param">x,y,z</span>)</div><div class="fn-desc">Middle of three values — great for clamping!</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">sgn</span>(<span class="param">x</span>)</div><div class="fn-desc">Sign: returns 1 or -1</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">sqrt</span>(<span class="param">x</span>)</div><div class="fn-desc">Square root</div></div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>TRIG & RANDOM</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">sin</span>(<span class="param">x</span>) / <span class="fn">cos</span>(<span class="param">x</span>)</div>
+          <div class="fn-desc">⚠ Input is <em>0..1</em> (not radians!). sin is negated vs standard. <em>cos(0)=1, sin(0.25)=-1</em></div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">atan2</span>(<span class="param">dx,dy</span>)</div>
+          <div class="fn-desc">Returns angle 0..1 (not radians). Note: dx first, dy second!</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">rnd</span>(<span class="param">x</span>)</div>
+          <div class="fn-desc">Random float 0 ≤ r &lt; x. <em>flr(rnd(6))+1</em> = d6 roll</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">srand</span>(<span class="param">x</span>)</div>
+          <div class="fn-desc">Set random seed</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>BITWISE OPS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item"><div class="fn-sig"><span class="fn">band</span>(<span class="param">x,y</span>) <span class="op">&amp;</span></div><div class="fn-desc">Bitwise AND</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">bor</span>(<span class="param">x,y</span>) <span class="op">|</span></div><div class="fn-desc">Bitwise OR</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">bxor</span>(<span class="param">x,y</span>) <span class="op">^^</span></div><div class="fn-desc">Bitwise XOR</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">bnot</span>(<span class="param">x</span>) <span class="op">~</span></div><div class="fn-desc">Bitwise NOT</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">shl</span>(<span class="param">x,n</span>) <span class="op">&lt;&lt;</span></div><div class="fn-desc">Shift left n bits</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">shr</span>(<span class="param">x,n</span>) <span class="op">&gt;&gt;</span></div><div class="fn-desc">Arithmetic shift right</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">lshr</span>(<span class="param">x,n</span>) <span class="op">&gt;&gt;&gt;</span></div><div class="fn-desc">Logical shift right</div></div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="section" id="tab-table">
+  <p class="section-title">Tables — Lua tables = arrays + dicts</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>TABLE FUNCTIONS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">add</span>(<span class="param">t,v,[i]</span>)</div>
+          <div class="fn-desc">Append v to table t. Optional index i to insert at position</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">del</span>(<span class="param">t,v</span>)</div>
+          <div class="fn-desc">Remove first occurrence of v from table t</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">deli</span>(<span class="param">t,i</span>)</div>
+          <div class="fn-desc">Remove element at index i</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">count</span>(<span class="param">t</span>)</div>
+          <div class="fn-desc">Number of elements (like #t but works on all tables)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">all</span>(<span class="param">t</span>)</div>
+          <div class="fn-desc">Iterator for <code>for v in all(t)</code> loops</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">foreach</span>(<span class="param">t,f</span>)</div>
+          <div class="fn-desc">Call f(v) for each element in t</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">pairs</span>(<span class="param">t</span>)</div>
+          <div class="fn-desc">Iterator for key-value pairs: <code>for k,v in pairs(t)</code></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>COMMON PATTERNS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="comment">-- array literal</span></div>
+          <div class="fn-sig"><span class="kw">local</span> a = {<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>}</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="comment">-- object literal</span></div>
+          <div class="fn-sig"><span class="kw">local</span> p = {x=<span class="num">0</span>,y=<span class="num">0</span>,spd=<span class="num">2</span>}</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="comment">-- safe delete while iterating</span></div>
+          <div class="fn-sig"><span class="kw">for</span> b <span class="kw">in</span> <span class="fn">all</span>(bullets) <span class="kw">do</span></div>
+          <div class="fn-sig">  <span class="kw">if</span> b.dead <span class="kw">then</span> <span class="fn">del</span>(bullets,b) <span class="kw">end</span></div>
+          <div class="fn-sig"><span class="kw">end</span></div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="comment">-- numeric for</span></div>
+          <div class="fn-sig"><span class="kw">for</span> i=<span class="num">1</span>,<span class="fn">#</span>a <span class="kw">do</span> ... <span class="kw">end</span></div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STRING -->
+<div class="section" id="tab-string">
+  <p class="section-title">String — Lua string library</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>STRING FUNCTIONS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item"><div class="fn-sig"><span class="fn">tostr</span>(<span class="param">x,[hex]</span>)</div><div class="fn-desc">Number/bool → string. hex=true for hex output</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">tonum</span>(<span class="param">s</span>)</div><div class="fn-desc">String → number</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">sub</span>(<span class="param">s,i,[j]</span>)</div><div class="fn-desc">Substring from i to j (1-indexed, negative = from end)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">ord</span>(<span class="param">s,[i]</span>)</div><div class="fn-desc">Char code at position i (default 1)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">chr</span>(<span class="param">n</span>)</div><div class="fn-desc">Char code n → string character</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">split</span>(<span class="param">s,[sep,cnv]</span>)</div><div class="fn-desc">Split string into table. sep=separator (default ","), cnv=convert to numbers</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="op">#</span>s or <span class="fn">count</span>(<span class="param">s</span>)</div><div class="fn-desc">String length</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig">s1 <span class="op">..</span> s2</div><div class="fn-desc">String concatenation</div></div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SYSTEM -->
+<div class="section" id="tab-system">
+  <p class="section-title">System — Game loop, state, timing</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>GAME LOOP CALLBACKS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="kw">function</span> <span class="fn">_init</span>()</div>
+          <div class="fn-desc">Called once on start / reset. Init state here</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="kw">function</span> <span class="fn">_update</span>()</div>
+          <div class="fn-desc">Called at 30fps. Game logic goes here</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="kw">function</span> <span class="fn">_update60</span>()</div>
+          <div class="fn-desc">Called at 60fps — use instead of _update for 60fps mode</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="kw">function</span> <span class="fn">_draw</span>()</div>
+          <div class="fn-desc">Called after _update. All draw calls go here</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>SYSTEM FUNCTIONS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item"><div class="fn-sig"><span class="fn">time</span>() / <span class="fn">t</span>()</div><div class="fn-desc">Seconds since cart started</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">stat</span>(<span class="num">0</span>)</div><div class="fn-desc">CPU usage (0..1). &gt;1 = dropping frames</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">stat</span>(<span class="num">1</span>)</div><div class="fn-desc">RAM usage (bytes)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">stat</span>(<span class="num">4</span>)</div><div class="fn-desc">Clipboard text</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">stat</span>(<span class="num">6</span>)</div><div class="fn-desc">Current frame (increments each _update)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">printh</span>(<span class="param">s</span>)</div><div class="fn-desc">Print to host console (for debugging)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">extcmd</span>(<span class="str">"pause"</span>)</div><div class="fn-desc">Trigger system pause menu</div></div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>LUA SPECIFICS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item"><div class="fn-sig"><span class="op">!=</span> same as <span class="op">~=</span></div><div class="fn-desc">Not-equal operator (both work in PICO-8)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="kw">and</span> / <span class="kw">or</span> / <span class="kw">not</span></div><div class="fn-desc">Logical operators (no &amp;&amp; || ! in Lua)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="kw">local</span> x = a <span class="kw">or</span> b</div><div class="fn-desc">Default value pattern (if a is nil/false, use b)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="kw">if</span> x <span class="kw">then</span> ... <span class="kw">end</span></div><div class="fn-desc">Only <em>nil</em> and <em>false</em> are falsy. 0 is truthy!</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="kw">?</span>x <span class="comment">-- shorthand print</span></div><div class="fn-desc">?expr is shorthand for print(tostr(expr)) — debug fast</div></div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MAP -->
+<div class="section" id="tab-map">
+  <p class="section-title">Map — 128×64 cells, each cell 8×8px sprite</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>MAP FUNCTIONS</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">mget</span>(<span class="param">cx,cy</span>)</div>
+          <div class="fn-desc">Get sprite number at map cell cx,cy</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">mset</span>(<span class="param">cx,cy,n</span>)</div>
+          <div class="fn-desc">Set map cell cx,cy to sprite n</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">fget</span>(<span class="param">n,[b]</span>)</div>
+          <div class="fn-desc">Get sprite flags. No b → returns all 8 flags as bitmask. b=bit index → bool</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">fset</span>(<span class="param">n,[b,]v</span>)</div>
+          <div class="fn-desc">Set sprite flag. No b → v is bitmask for all flags</div>
+        </div>
+        <div class="tip-box"><strong>TIP:</strong> Use fget for collision: <code>if fget(mget(cx,cy),0) then -- solid!</code></div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>TILEMAP COLLISION PATTERN</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="comment">-- check tile flag at world pos</span></div>
+          <div class="fn-sig"><span class="kw">function</span> <span class="fn">solid</span>(<span class="param">x,y</span>)</div>
+          <div class="fn-sig">  <span class="kw">local</span> cx = <span class="fn">flr</span>(x/<span class="num">8</span>)</div>
+          <div class="fn-sig">  <span class="kw">local</span> cy = <span class="fn">flr</span>(y/<span class="num">8</span>)</div>
+          <div class="fn-sig">  <span class="kw">return</span> <span class="fn">fget</span>(<span class="fn">mget</span>(cx,cy), <span class="num">0</span>)</div>
+          <div class="fn-sig"><span class="kw">end</span></div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MEMORY -->
+<div class="section" id="tab-memory">
+  <p class="section-title">Memory — 64KB address space</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>PEEK & POKE</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item"><div class="fn-sig"><span class="fn">peek</span>(<span class="param">addr</span>)</div><div class="fn-desc">Read byte at address (0-255)</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">poke</span>(<span class="param">addr,val</span>)</div><div class="fn-desc">Write byte to address</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">peek2</span>(<span class="param">addr</span>)</div><div class="fn-desc">Read 2-byte word</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">poke2</span>(<span class="param">addr,val</span>)</div><div class="fn-desc">Write 2-byte word</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">peek4</span>(<span class="param">addr</span>)</div><div class="fn-desc">Read 4-byte fixed-point number</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">poke4</span>(<span class="param">addr,val</span>)</div><div class="fn-desc">Write 4-byte fixed-point</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">memcpy</span>(<span class="param">dst,src,len</span>)</div><div class="fn-desc">Copy len bytes from src to dst</div></div><div class="divider"></div>
+        <div class="fn-item"><div class="fn-sig"><span class="fn">memset</span>(<span class="param">dst,val,len</span>)</div><div class="fn-desc">Fill len bytes at dst with val</div></div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>MEMORY MAP</div>
+      <div class="card-body">
+        <table class="key-table">
+          <tr><td>0x0000–0x0FFF</td><td>Spritesheet (128×128 px)</td></tr>
+          <tr><td>0x1000–0x1FFF</td><td>Map (upper 32 rows)</td></tr>
+          <tr><td>0x2000–0x2FFF</td><td>Map (lower 32 rows) / shared with spritesheet bottom half</td></tr>
+          <tr><td>0x3000–0x30FF</td><td>Sprite flags</td></tr>
+          <tr><td>0x3100–0x31FF</td><td>Music patterns</td></tr>
+          <tr><td>0x3200–0x42FF</td><td>SFX data</td></tr>
+          <tr><td>0x4300–0x5DFF</td><td>General purpose RAM</td></tr>
+          <tr><td>0x5E00–0x5EFF</td><td>Persistent cart data</td></tr>
+          <tr><td>0x5F00–0x5FFF</td><td>Draw state / GPIO</td></tr>
+          <tr><td>0x6000–0x7FFF</td><td>Screen buffer</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>CART DATA (SAVE)</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">cartdata</span>(<span class="param">id</span>)</div>
+          <div class="fn-desc">Init persistent storage with unique cart id string. Call once in _init</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">dget</span>(<span class="param">i</span>)</div>
+          <div class="fn-desc">Get persistent value at index i (0-63)</div>
+        </div><div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">dset</span>(<span class="param">i,v</span>)</div>
+          <div class="fn-desc">Set persistent value at index i. Auto-saved!</div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PALETTE -->
+<div class="section" id="tab-palette">
+  <p class="section-title">16-Color Palette — Plus 16 secret colors (via pal)</p>
+  <div class="grid">
+    <div class="card" style="grid-column: 1/-1">
+      <div class="card-head"><span class="dot"></span>STANDARD PALETTE (0-15)</div>
+      <div class="card-body">
+        <div class="palette-grid" id="palette-standard"></div>
+      </div>
+    </div>
+    <div class="card" style="grid-column: 1/-1">
+      <div class="card-head"><span class="dot"></span>SECRET PALETTE (128-143) — access via pal(c,128+n,1)</div>
+      <div class="card-body">
+        <div class="palette-grid" id="palette-secret"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STRUCTURE -->
+<div class="section" id="tab-structure">
+  <p class="section-title">Code Structure — OOP, state machines, patterns</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>OOP WITH METATABLES</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="comment">-- define a class</span></div>
+          <div class="fn-sig">player = {}</div>
+          <div class="fn-sig">player.__index = player</div>
+          <div class="fn-sig"></div>
+          <div class="fn-sig"><span class="kw">function</span> player:<span class="fn">new</span>(x,y)</div>
+          <div class="fn-sig">  <span class="kw">local</span> o = {x=x,y=y,spd=<span class="num">2</span>}</div>
+          <div class="fn-sig">  <span class="kw">return</span> <span class="fn">setmetatable</span>(o, player)</div>
+          <div class="fn-sig"><span class="kw">end</span></div>
+          <div class="fn-sig"></div>
+          <div class="fn-sig"><span class="kw">function</span> player:<span class="fn">update</span>()</div>
+          <div class="fn-sig">  <span class="kw">if</span> <span class="fn">btn</span>(<span class="num">0</span>) <span class="kw">then</span> self.x -= self.spd <span class="kw">end</span></div>
+          <div class="fn-sig"><span class="kw">end</span></div>
+          <div class="fn-sig"></div>
+          <div class="fn-sig"><span class="comment">-- usage</span></div>
+          <div class="fn-sig"><span class="kw">local</span> p = player:<span class="fn">new</span>(<span class="num">64</span>,<span class="num">64</span>)</div>
+          <div class="fn-sig">p:<span class="fn">update</span>()</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>SIMPLE STATE MACHINE</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig">state = <span class="str">"menu"</span></div>
+          <div class="fn-sig">states = {}</div>
+          <div class="fn-sig"></div>
+          <div class="fn-sig">states.menu = <span class="kw">function</span>()</div>
+          <div class="fn-sig">  <span class="fn">print</span>(<span class="str">"press x"</span>,<span class="num">50</span>,<span class="num">60</span>,<span class="num">7</span>)</div>
+          <div class="fn-sig">  <span class="kw">if</span> <span class="fn">btnp</span>(<span class="num">5</span>) <span class="kw">then</span> state=<span class="str">"game"</span> <span class="kw">end</span></div>
+          <div class="fn-sig"><span class="kw">end</span></div>
+          <div class="fn-sig"></div>
+          <div class="fn-sig">states.game = <span class="kw">function</span>() ... <span class="kw">end</span></div>
+          <div class="fn-sig"></div>
+          <div class="fn-sig"><span class="kw">function</span> <span class="fn">_update</span>()</div>
+          <div class="fn-sig">  states[state]()</div>
+          <div class="fn-sig"><span class="kw">end</span></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>LIMITS TO KNOW</div>
+      <div class="card-body">
+        <table class="key-table">
+          <tr><td>Screen</td><td>128 × 128 px</td></tr>
+          <tr><td>Sprites</td><td>256 (8×8 px each)</td></tr>
+          <tr><td>Map</td><td>128 × 64 cells</td></tr>
+          <tr><td>SFX</td><td>64 slots, 32 notes each</td></tr>
+          <tr><td>Music</td><td>64 patterns</td></tr>
+          <tr><td>Colors</td><td>16 (+ 16 secret)</td></tr>
+          <tr><td>Token limit</td><td>8192 tokens</td></tr>
+          <tr><td>Char limit</td><td>32768 characters</td></tr>
+          <tr><td>RAM</td><td>64KB</td></tr>
+          <tr><td>FPS</td><td>30 (_update) or 60 (_update60)</td></tr>
+        </table>
+        <div class="tip-box"><strong>Token savers:</strong> Use <code>?</code> for print, <code>a+=1</code> not <code>a=a+1</code>, shorthand <code>if cond then x=1 end</code> on one line.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="dot"></span>COROUTINES</div>
+      <div class="card-body"><div class="fn-row">
+        <div class="fn-item">
+          <div class="fn-sig"><span class="comment">-- cutscene / tween example</span></div>
+          <div class="fn-sig"><span class="kw">function</span> <span class="fn">sequence</span>()</div>
+          <div class="fn-sig">  <span class="fn">move_to</span>(p, <span class="num">64</span>, <span class="num">32</span>)</div>
+          <div class="fn-sig">  <span class="fn">yield</span>() <span class="comment">-- wait a frame</span></div>
+          <div class="fn-sig">  <span class="fn">say</span>(p, <span class="str">"hello!"</span>)</div>
+          <div class="fn-sig"><span class="kw">end</span></div>
+          <div class="fn-sig"></div>
+          <div class="fn-sig">co = <span class="fn">cocreate</span>(sequence)</div>
+          <div class="fn-sig"><span class="comment">-- in _update:</span></div>
+          <div class="fn-sig"><span class="kw">if</span> <span class="fn">costatus</span>(co)!=<span class="str">"dead"</span> <span class="kw">then</span></div>
+          <div class="fn-sig">  <span class="fn">coresume</span>(co)</div>
+          <div class="fn-sig"><span class="kw">end</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">cocreate</span>(<span class="param">f</span>)</div>
+          <div class="fn-desc">Create coroutine from function</div>
+        </div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">coresume</span>(<span class="param">co,[...]</span>)</div>
+          <div class="fn-desc">Resume coroutine</div>
+        </div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">costatus</span>(<span class="param">co</span>)</div>
+          <div class="fn-desc">"running" / "suspended" / "dead"</div>
+        </div>
+        <div class="fn-item">
+          <div class="fn-sig"><span class="fn">yield</span>(<span class="param">[...]</span>)</div>
+          <div class="fn-desc">Suspend coroutine (call from inside)</div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+</main>
+
+<div id="no-results" class="no-results" style="display:none">
+  <p>NO RESULTS FOUND</p>
+  <p style="margin-top:12px;font-size:7px;color:#5f2f6f">TRY A DIFFERENT SEARCH TERM</p>
+</div>
+
+<script>
+// Palette data
+const standardColors = [
+  {i:0,  hex:'#000000', name:'black'},
+  {i:1,  hex:'#1d2b53', name:'dark-blue'},
+  {i:2,  hex:'#7e2553', name:'dark-purple'},
+  {i:3,  hex:'#008751', name:'dark-green'},
+  {i:4,  hex:'#ab5236', name:'brown'},
+  {i:5,  hex:'#5f574f', name:'dark-grey'},
+  {i:6,  hex:'#c2c3c7', name:'light-grey'},
+  {i:7,  hex:'#fff1e8', name:'white'},
+  {i:8,  hex:'#ff004d', name:'red'},
+  {i:9,  hex:'#ffa300', name:'orange'},
+  {i:10, hex:'#ffec27', name:'yellow'},
+  {i:11, hex:'#00e436', name:'green'},
+  {i:12, hex:'#29adff', name:'blue'},
+  {i:13, hex:'#83769c', name:'lavender'},
+  {i:14, hex:'#ff77a8', name:'pink'},
+  {i:15, hex:'#ffccaa', name:'peach'},
+];
+
+const secretColors = [
+  {i:128, hex:'#000000', name:'black-2'},
+  {i:129, hex:'#1d2b53', name:'storm'},
+  {i:130, hex:'#7e2553', name:'wine'},
+  {i:131, hex:'#008751', name:'moss'},
+  {i:132, hex:'#ab5236', name:'tan'},
+  {i:133, hex:'#5f574f', name:'slate'},
+  {i:134, hex:'#c2c3c7', name:'silver'},
+  {i:135, hex:'#fff1e8', name:'mauve'},
+  {i:136, hex:'#ff004d', name:'rose'},
+  {i:137, hex:'#ffa300', name:'ember'},
+  {i:138, hex:'#ffec27', name:'lemon'},
+  {i:139, hex:'#00e436', name:'lime'},
+  {i:140, hex:'#29adff', name:'sky'},
+  {i:141, hex:'#83769c', name:'dusk'},
+  {i:142, hex:'#ff77a8', name:'blush'},
+  {i:143, hex:'#ffccaa', name:'bisque'},
+];
+
+function buildPalette(colors, containerId) {
+  const el = document.getElementById(containerId);
+  colors.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch';
+    sw.style.background = c.hex;
+    const textColor = c.i < 6 ? '#fff' : '#000';
+    sw.style.color = textColor;
+    sw.style.textShadow = c.i < 6 ? 'none' : '1px 1px 0 rgba(0,0,0,0.5)';
+    sw.innerHTML = `<span>${c.i}</span><span class="cidx">${c.name}</span>`;
+    sw.title = `${c.i}: ${c.name} (${c.hex})`;
+    el.appendChild(sw);
+  });
+}
+
+buildPalette(standardColors, 'palette-standard');
+buildPalette(secretColors, 'palette-secret');
+
+// Tabs
+const tabs = document.querySelectorAll('.tab');
+const sections = document.querySelectorAll('.section');
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    sections.forEach(s => {
+      s.classList.toggle('visible', s.id === 'tab-' + target);
+    });
+    document.getElementById('search').value = '';
+    document.getElementById('no-results').style.display = 'none';
+    document.querySelectorAll('.fn-item').forEach(fi => fi.style.display = '');
+    document.querySelectorAll('.card').forEach(c => c.style.display = '');
+  });
+});
+
+// Search
+const search = document.getElementById('search');
+search.addEventListener('input', () => {
+  const q = search.value.toLowerCase().trim();
+  if (!q) {
+    sections.forEach(s => {
+      const isActive = s.classList.contains('visible');
+    });
+    // reset: show active section normally
+    const activeTab = document.querySelector('.tab.active').dataset.tab;
+    sections.forEach(s => {
+      s.classList.toggle('visible', s.id === 'tab-' + activeTab);
+    });
+    document.querySelectorAll('.fn-item').forEach(fi => fi.style.display = '');
+    document.querySelectorAll('.card').forEach(c => c.style.display = '');
+    document.getElementById('no-results').style.display = 'none';
+    return;
+  }
+
+  // Show all sections, filter items
+  sections.forEach(s => s.classList.add('visible'));
+
+  let anyVisible = false;
+  document.querySelectorAll('.card').forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = text.includes(q) ? '' : 'none';
+    if (text.includes(q)) anyVisible = true;
+  });
+
+  document.getElementById('no-results').style.display = anyVisible ? 'none' : 'block';
+});
+</script>
+</body>
+</html>

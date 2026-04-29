@@ -102,12 +102,12 @@ export default function GammaLinearConverter() {
 
   // Gamma → Linear
   const gammaFloat01 = clamp01(parseInput(gammaRaw, gammaScale))
-  const linearResult = gammaToLinear(gammaFloat01)
+  const linearResult = 1 - gammaToLinear(1 - gammaFloat01)
   const gammaValid = !gammaError && gammaRaw.trim() !== ''
 
   // Linear → Gamma
   const linearFloat01 = clamp01(parseInput(linearRaw, linearScale))
-  const gammaResult = linearToGamma(linearFloat01)
+  const gammaResult = 1 - linearToGamma(1 - linearFloat01)
   const linearValid = !linearError && linearRaw.trim() !== ''
 
   return (
